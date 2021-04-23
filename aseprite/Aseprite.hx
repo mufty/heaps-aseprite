@@ -34,17 +34,21 @@ class Aseprite {
   var heightInTiles:Int;
 
   public function new(bytes:haxe.io.Bytes) {
-    fromBytes(bytes);
+    loadBytes(bytes);
   }
 
-  public function toTexture():Texture {
+  public static function fromBytes(b) {
+    return new Aseprite(b);
+  }
+
+  public function getTexture():Texture {
     if (texture != null) return texture;
     loadTexture();
     return texture;
   }
 
   public function toTile():Tile {
-    return Tile.fromTexture(toTexture());
+    return Tile.fromTexture(getTexture());
   }
 
   public function toTiles():Array<Tile> {
@@ -200,7 +204,7 @@ class Aseprite {
     tiles = null;
   }
 
-  public function fromBytes(bytes:haxe.io.Bytes) {
+  public function loadBytes(bytes:haxe.io.Bytes) {
     dispose();
     ase = Ase.fromBytes(bytes);
 
