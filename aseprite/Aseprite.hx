@@ -15,7 +15,10 @@ import hxd.Pixels;
 import hxd.fs.FileEntry;
 import hxd.res.Resource;
 
-class Aseprite extends Resource {
+class Aseprite {
+  /** This option should be set before loading any texture **/
+  public static var resizeToNextPowerOfTwo = false;
+
   public var ase:Ase;
   public var frames(default, null):Array<Frame> = [];
   public var layers(default, null):Array<LayerChunk> = [];
@@ -30,19 +33,22 @@ class Aseprite extends Resource {
   var widthInTiles:Int;
   var heightInTiles:Int;
 
-  public function new(entry:FileEntry) {
-    super(entry);
-    loadData();
+  public function new(bytes:haxe.io.Bytes) {
+    loadBytes(bytes);
   }
 
-  public function toTexture():Texture {
+  public static function fromBytes(b) {
+    return new Aseprite(b);
+  }
+
+  public function getTexture():Texture {
     if (texture != null) return texture;
     loadTexture();
     return texture;
   }
 
   public function toTile():Tile {
-    return Tile.fromTexture(toTexture());
+    return Tile.fromTexture(getTexture());
   }
 
   public function toTiles():Array<Tile> {
@@ -183,19 +189,24 @@ class Aseprite extends Resource {
     ];
   }
 
-  public function watchCallback() {
+  // public function watchCallback() { // not supported
+  //   dispose();
+  //   loadData();
+  //   loadTexture();
+  // }
+
+  function dispose() {
     for (frame in frames) frame.dispose();
     frames.resize(0);
     layers.resize(0);
     tags.clear();
     slices.clear();
     tiles = null;
-    loadData();
-    loadTexture();
   }
 
-  function loadData() {
-    ase = Ase.fromBytes(entry.getBytes());
+  public function loadBytes(bytes:haxe.io.Bytes) {
+    dispose();
+    ase = Ase.fromBytes(bytes);
 
     for (chunk in ase.frames[0].chunks) {
       switch (chunk.header.type) {
@@ -259,8 +270,12 @@ class Aseprite extends Resource {
       }
     }
 
-    var textureWidth = next_power_of_2(ase.header.width * widthInTiles);
-    var textureHeight = next_power_of_2(ase.header.height * heightInTiles);
+    var textureWidth = ase.header.width * widthInTiles;
+    var textureHeight = ase.header.height * heightInTiles;
+    if (resizeToNextPowerOfTwo) {
+      textureWidth = next_power_of_2(textureWidth);
+      textureHeight = next_power_of_2(textureHeight);
+    }
 
     var pixels = Pixels.alloc(textureWidth, textureHeight, RGBA);
 
@@ -272,7 +287,7 @@ class Aseprite extends Resource {
 
     if (texture == null) {
       texture = Texture.fromPixels(pixels);
-      watch(watchCallback);
+      // watch(watchCallback); // not supported
     }
     else {
       var t = Texture.fromPixels(pixels);
