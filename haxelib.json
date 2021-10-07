@@ -1,6 +1,7 @@
 {
   "name": "heaps-aseprite",
   "license": "MIT",
+  "classPath": "src",
   "tags": [
     "heaps",
     "animation",
@@ -11,8 +12,8 @@
     "austineast"
   ],
   "url": "https://github.com/AustinEast/heaps-aseprite",
-  "releasenote": "live reloading support",
-  "version": "0.0.4",
+  "releasenote": "Support latest git heaps - removes `swapTexture()` method",
+  "version": "0.1.2",
   "dependencies": {
     "ase": ""
   }

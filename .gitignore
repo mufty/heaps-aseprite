@@ -1,4 +1,6 @@
 bin/
+dump/
+.tmp/
 .DS_Store
 heaps-aseprite.zip
 dump/

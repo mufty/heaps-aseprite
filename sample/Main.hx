@@ -2,6 +2,7 @@ package;
 
 import ase.AnimationDirection;
 import aseprite.AseAnim;
+import aseprite.Dictionary;
 import h2d.Bitmap;
 import h2d.Flow;
 import h2d.Text;
@@ -17,12 +18,6 @@ class Main extends App {
   var fps:Text;
 
   override function init() {
-    #if hl
-    Res.initLocal();
-    #else
-    Res.initEmbed();
-    #end
-
     engine.backgroundColor = 0x403750;
 
     s2d.scaleMode = ScaleMode.LetterBox(engine.width, engine.height);
@@ -39,47 +34,61 @@ class Main extends App {
     fps.y += drawcalls.textHeight;
 
     // RBG Color Mode
-    new Bitmap(Res._128x128_rgba.toTile(), flow);
+    new Bitmap(Res.subdir_test._128x128_rgba.toAseprite().toTile(), flow);
     // Grayscale Color Mode
-    new Bitmap(Res.grayscale.toTile(), flow);
+    new Bitmap(Res.grayscale.toAseprite().toTile(), flow);
     // Indexed Color Mode
-    new Bitmap(Res.indexed_multi_layer.toTile(), flow);
+    new Bitmap(Res.indexed_multi_layer.toAseprite().toTile(), flow);
+
+    // toImage() support (only enabled when aseprite.fs.Convert.AsepriteConvert is enabled)
+    // new Bitmap(Res.indexed_multi_layer.toImage().toTile(), flow);
 
     // Tagged animations
-    new AseAnim(Res.tags.getTag('walk'), flow).loop = true;
-    new AseAnim(Res.tags.getTag('hit_face'), flow).loop = true;
-    new AseAnim(Res.tags.getTag('fall'), flow).loop = true;
+    new AseAnim(Res.tags.toAseprite().getTag('walk'), flow).loop = true;
+    new AseAnim(Res.tags.toAseprite().getTag('hit_face'), flow).loop = true;
+    new AseAnim(Res.tags.toAseprite().getTag('fall'), flow).loop = true;
 
     // Tagged animation with direction override
-    new AseAnim(Res.tags.getTag('walk', AnimationDirection.REVERSE), flow).loop = true;
+    new AseAnim(Res.tags.toAseprite().getTag('walk', AnimationDirection.REVERSE), flow).loop = true;
 
     // Tagged animation with slices
-    new AseAnim(Res.tags.getTag('fall', -1, 'Head'), flow).loop = true;
+    new AseAnim(Res.tags.toAseprite().getTag('fall', -1, 'Head'), flow).loop = true;
 
     // Ping-Pong animation
-    new AseAnim(Res.pong.getTag('pong'), flow).loop = true;
+    new AseAnim(Res.pong.toAseprite().getTag('pong'), flow).loop = true;
 
     // Linked Cells
-    new AseAnim(Res.anim_linked_cels.getFrames(), flow).loop = true;
+    new AseAnim(Res.anim_linked_cels.toAseprite().getFrames(), flow).loop = true;
 
     // Slice
-    new Bitmap(Res.slices.getSlice('Slice 1').tile, flow);
+    new Bitmap(Res.slices.toAseprite().getSlice('Slice 1').tile, flow);
     // 9 Slice
-    Res.slices.toScaleGrid('9-Slices', 0, flow);
+    Res.slices.toAseprite().toScaleGrid('9-Slices', 0, flow);
 
     // Animated Slices
-    new AseAnim(Res.slices2.getSlices('Slice 1'), flow).loop = true;
-    new AseAnim(Res.slices2.getSlices('Slice 2'), flow).loop = true;
-    new AseAnim(Res.slices2.getSlices('Slice 3'), flow).loop = true;
-    new AseAnim(Res.slices2.getSlices('Slice 4'), flow).loop = true;
+    new AseAnim(Res.slices2.toAseprite().getSlices('Slice 1'), flow).loop = true;
+    new AseAnim(Res.slices2.toAseprite().getSlices('Slice 2'), flow).loop = true;
+    new AseAnim(Res.slices2.toAseprite().getSlices('Slice 3'), flow).loop = true;
+    new AseAnim(Res.slices2.toAseprite().getSlices('Slice 4'), flow).loop = true;
 
     // Live Resource Updatng
-    var animation = new AseAnim(Res.test.getTag('Idle'), flow);
+    var animation = new AseAnim(Res.test.toAseprite().getTag('Idle'), flow);
     animation.loop = true;
     Res.test.watch(() -> {
-      Res.test.watchCallback();
-      animation.play(Res.test.getTag('Idle'));
+      // Make sure to call the default `watch()` callback!
+      Res.test.updateData();
+
+      // Replay the animation to get the updated frames
+      animation.play(Res.test.toAseprite().getTag('Idle'));
     });
+
+    // Want type-safe Tags and Slices? Use the `Dictionary` class to get typed references from an Aseprite resource
+    // (Thanks @deepnight!)
+    var typeSafeTags = Dictionary.getTags(Res.tags);
+    new AseAnim(Res.tags.toAseprite().getTag(typeSafeTags.walk), flow).loop = true;
+
+    var typeSafeSlices = Dictionary.getSlices(Res.slices);
+    new Bitmap(Res.slices.toAseprite().getSlice(typeSafeSlices.Slice_1).tile, flow);
   }
 
   override function update(dt:Float) {
@@ -103,6 +112,14 @@ class Main extends App {
   }
 
   static function main() {
+    // Reg.init();
+
+    #if hl
+    Res.initLocal();
+    #else
+    Res.initEmbed();
+    #end
+
     new Main();
   }
 }
