@@ -1,5 +1,7 @@
 package aseprite;
 
+import h3d.Vector4;
+import h3d.Vector;
 import ase.AnimationDirection;
 import ase.Ase;
 import aseprite.Frame;
@@ -35,6 +37,7 @@ class Aseprite {
   public var height(default, null):Int;
 
   var texture:Texture;
+  var skins:Array<Texture>;
   var tiles:Array<Tile>;
   var widthInTiles:Int;
   var heightInTiles:Int;
@@ -246,6 +249,30 @@ class Aseprite {
     else {
       texture.uploadPixels(pixels);
     }
+  }
+
+  public function addSkin(skinTexture:Texture) {
+    if (skins == null) skins = [];
+
+    var mainTexPixels = texture.capturePixels();
+    var skinPixels = skinTexture.capturePixels();
+
+    for(y in 0...mainTexPixels.height)
+        for(x in 0...mainTexPixels.width){
+            var p = mainTexPixels.getPixel(x, y);
+            var pv = Vector4.fromColor(p);
+            if(pv.a != 0 && pv.b == 0) {
+                var sx = Std.int(pv.r * 255);
+                var sy = Std.int(pv.g * 255);
+                var np = skinPixels.getPixel(sx, sy);
+                mainTexPixels.setPixel(x, y, np);
+            }
+    }
+
+    var newSkinTex = Texture.fromPixels(mainTexPixels);
+
+    skins.push(newSkinTex);
+    //texture = newSkinTex; // just for testing
   }
 
   inline function getSliceKey(slice:Slice, frame:Int) {
