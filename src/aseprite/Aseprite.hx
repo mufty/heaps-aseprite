@@ -35,9 +35,12 @@ class Aseprite {
    * Height of the Aseprite file's canvas.
    */
   public var height(default, null):Int;
+  /**
+   * Holds different UV skins
+   */
+  public var skins:Array<Texture>;
 
   var texture:Texture;
-  var skins:Array<Texture>;
   var tiles:Array<Tile>;
   var widthInTiles:Int;
   var heightInTiles:Int;
@@ -56,14 +59,16 @@ class Aseprite {
 
   function new() {}
 
-  public function toTile():Tile {
+  public function toTile(?skinIndex:Int):Tile {
+    if(skinIndex != null && skins != null && skins.length > skinIndex)
+        return Tile.fromTexture(skins[skinIndex]);
     return Tile.fromTexture(getTexture());
   }
 
-  public function toTiles():Array<Tile> {
+  public function toTiles(?skinIndex:Int):Array<Tile> {
     if (tiles != null) return tiles;
 
-    var tile = toTile();
+    var tile = toTile(skinIndex);
     tiles = [
       for (i in 0...frames.length) {
         var x = i % widthInTiles;
@@ -123,7 +128,7 @@ class Aseprite {
     return {index: index, tile: toTiles()[index], duration: frames[index].duration};
   }
 
-  public function getTag(name:String, direction:Int = -1, ?sliceName:String):Array<AsepriteFrame> {
+  public function getTag(name:String, direction:Int = -1, ?sliceName:String, ?skinIndex:Int):Array<AsepriteFrame> {
     var tag = tags.get(name);
     if (tag == null) {
       trace('WARNING: A tag named "$name" does not exist on this Aseprite.');
@@ -136,7 +141,7 @@ class Aseprite {
       if (slice == null) trace('WARNING: A slice named "$sliceName" does not exist on this Aseprite.');
     }
 
-    var tiles = toTiles();
+    var tiles = toTiles(skinIndex);
     var animation = [];
 
     function addAnimation(frame:Int) {
